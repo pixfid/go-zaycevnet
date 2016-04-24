@@ -27,7 +27,10 @@ const (
 	downloadURL       string = apiURL + "/track/%d/download/?"
 )
 
-var httpClient = http.DefaultClient
+var (
+	httpClient = http.DefaultClient
+	errData    = []byte{'{', '}'}
+)
 
 type ZClient struct {
 	accessToken string
@@ -60,7 +63,6 @@ func (zc *ZClient) hello() {
 	if err := t.parse(data); err != nil {
 
 	}
-	println(t.Token)
 	zc.auth(t.Token)
 }
 
@@ -343,33 +345,41 @@ func play(token string, id int) (ZPlay, error) {
 	return zPlay, nil
 }
 
-func isExpiredToken() bool {
-	return true
-}
-
 //get data
 func get(uri string) ([]byte, error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		return nil, err
+		return errData, err
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return errData, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("not found")
+		return errData, fmt.Errorf("not found")
 	}
 
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return errData, err
 	}
-
+	se := checkServiceError(bodyBytes)
+	if se != nil {
+		return errData, se
+	}
 	return bodyBytes, nil
+}
+
+func checkServiceError(data []byte) error {
+	var zError ZError
+	err := zError.parse(data)
+	if err != nil || zError.Error.Text != "" {
+		return fmt.Errorf("Message %s, code %d", zError.Error.Text, zError.Error.Code)
+	}
+	return nil
 }
