@@ -1,7 +1,11 @@
 # go-zaycevnet
 Golang bindings for the Zaycev.net API
 
-# Usage:
+# Install: <br/>
+
+go get github.com/mattn/go-gtk/gtk <br/>
+
+# Usage:<br/>
 
 ```go
 package main
@@ -31,7 +35,8 @@ func main() {
 	println(result.Artist.Name)
 }
 ```
-# Supported Methods
+
+# Supported Methods<br/>
 >client.Search(query string)<br/>
 >client.AutoComplete(query string)<br/>
 >client.TOP(page int)<br/>
