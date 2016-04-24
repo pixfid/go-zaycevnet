@@ -3,7 +3,7 @@ Golang bindings for the Zaycev.net API
 
 # Install: <br/>
 
-go get github.com/mattn/go-gtk/gtk <br/>
+go get github.com/pixfid/go-zaycevnet <br/>
 
 # Usage:<br/>
 
