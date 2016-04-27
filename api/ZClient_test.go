@@ -146,7 +146,3 @@ func TestZClient_Options(t *testing.T) {
 		t.Logf("Options : %s.", options[i])
 	}
 }
-
-func TestMD5Hash(t *testing.T) {
-	t.Logf("OK")
-}
