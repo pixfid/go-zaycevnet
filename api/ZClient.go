@@ -9,22 +9,22 @@ import (
 )
 
 const (
-	apiURL            string = "https://api.zaycev.net/external"
-	helloURL          string = apiURL + "/hello"
-	authURL           string = apiURL + "/auth?"
-	topURL            string = apiURL + "/top?"
-	artistURL         string = apiURL + "/artist/%d?"
-	musicSetListURL   string = apiURL + "/musicset/list?"
+	apiURL string = "https://api.zaycev.net/external"
+	helloURL string = apiURL + "/hello"
+	authURL string = apiURL + "/auth?"
+	topURL string = apiURL + "/top?"
+	artistURL string = apiURL + "/artist/%d?"
+	musicSetListURL string = apiURL + "/musicset/list?"
 	musicSetDetileURL string = apiURL + "/musicset/detail?"
-	genreURL          string = apiURL + "/genre?"
-	trackURL          string = apiURL + "/track/%d?"
+	genreURL string = apiURL + "/genre?"
+	trackURL string = apiURL + "/track/%d?"
 	//feedbackURL string = apiURL + "/feedback?"
 	//bugsURL string = apiURL + "/bugs?"
 	autoCompleteURL string = apiURL + "/autocomplete?"
-	searchURL       string = apiURL + "/search?"
-	optionsURL      string = apiURL + "/options?"
-	playURL         string = apiURL + "/track/%d/play?"
-	downloadURL     string = apiURL + "/track/%d/download/?"
+	searchURL string = apiURL + "/search?"
+	optionsURL string = apiURL + "/options?"
+	playURL string = apiURL + "/track/%d/play?"
+	downloadURL string = apiURL + "/track/%d/download/?"
 )
 
 var (
@@ -58,7 +58,7 @@ func (zc *ZClient) hello() {
 	}
 
 	var t ZToken
-	data, err := Do(zc, helloURL)
+	data, err := do(zc, helloURL)
 	if err != nil {
 
 	}
@@ -81,7 +81,7 @@ func (zc *ZClient) auth(token string) {
 
 	uri := authURL + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 
 	if err != nil {
 
@@ -103,7 +103,7 @@ func search(zc *ZClient, params url.Values) (ZSearch, error) {
 	var zSearch ZSearch
 	params.Add("access_token", zc.accessToken)
 	uri := searchURL + params.Encode()
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZSearch{}, err
 	}
@@ -126,7 +126,7 @@ func autoComplete(zc *ZClient, query string) (ZTerms, error) {
 	params.Add("query", query)
 
 	uri := autoCompleteURL + params.Encode()
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZTerms{}, err
 	}
@@ -148,7 +148,7 @@ func top(zc *ZClient, page int) (ZTop, error) {
 	params.Add("access_token", zc.accessToken)
 
 	uri := topURL + params.Encode()
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZTop{}, err
 	}
@@ -171,7 +171,7 @@ func musicSetList(zc *ZClient, page int) (ZMusicSetList, error) {
 
 	uri := musicSetListURL + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZMusicSetList{}, err
 	}
@@ -194,7 +194,7 @@ func musicSetDetile(zc *ZClient, id int) (ZMusicSetDetile, error) {
 
 	uri := musicSetDetileURL + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZMusicSetDetile{}, err
 	}
@@ -218,7 +218,7 @@ func genre(zc *ZClient, genre string, page int) (ZGenre, error) {
 
 	uri := genreURL + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZGenre{}, err
 	}
@@ -242,7 +242,7 @@ func artist(zc *ZClient, id int) (ZArtist, error) {
 
 	uri := u + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZArtist{}, err
 	}
@@ -266,7 +266,7 @@ func track(zc *ZClient, id int) (ZTrack, error) {
 
 	uri := u + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZTrack{}, err
 	}
@@ -288,7 +288,7 @@ func options(zc *ZClient) (ZOptions, error) {
 
 	uri := optionsURL + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZOptions{}, err
 	}
@@ -313,7 +313,7 @@ func download(zc *ZClient, id int) (ZDownload, error) {
 
 	uri := u + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZDownload{}, err
 	}
@@ -338,7 +338,7 @@ func play(zc *ZClient, id int) (ZPlay, error) {
 
 	uri := u + params.Encode()
 
-	data, err := Do(zc, uri)
+	data, err := do(zc, uri)
 	if err != nil {
 		return ZPlay{}, err
 	}
@@ -349,7 +349,7 @@ func play(zc *ZClient, id int) (ZPlay, error) {
 }
 
 //get data
-func Do(zc *ZClient, uri string) ([]byte, error) {
+func do(zc *ZClient, uri string) ([]byte, error) {
 
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
