@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	client := api.NewZClient("", "kmskoNkYHDnl3ol2") //60kQwLlpV3jv //d7DVaaELv
+	client := api.NewZClient(nil, "", "kmskoNkYHDnl3ol2") //60kQwLlpV3jv //d7DVaaELv
 	client.Auth()
 	params := url.Values{}
 	params.Add("query", "ZZ TOP")
@@ -41,7 +41,7 @@ func main() {
 # Supported Methods<br/>
 >client.Search(query string)<br/>
 >client.AutoComplete(query string)<br/>
->client.TOP(page int)<br/>
+>client.Top(page int)<br/>
 >client.MusicSetList(page int)<br/>
 >client.MusicSetDetile(musicSetId int)<br/>
 >client.Genre(genreName string, page int)<br/>

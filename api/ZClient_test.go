@@ -12,13 +12,13 @@ var (
 )
 
 func TestNewZClient(t *testing.T) {
-	client = NewZClient("", "kmskoNkYHDnl3ol2")
+	client = NewZClient(nil, "", "kmskoNkYHDnl3ol2")
 	client.Auth()
 	println("Token:", client.accessToken)
 }
 
-func TestZClient_TOP(t *testing.T) {
-	result, err := client.TOP(1)
+func TestZClient_Top(t *testing.T) {
+	result, err := client.Top(1)
 	if err != nil {
 		t.Errorf("Error %s.", err.Error())
 	}
@@ -27,7 +27,6 @@ func TestZClient_TOP(t *testing.T) {
 	t.Logf("Track  Date %d.", result.Tracks[0].Date)
 	t.Logf("Track  Bitrate %d.", result.Tracks[0].Bitrate)
 	t.Logf("Track  Duration %s.", result.Tracks[0].Duration)
-
 }
 
 func TestZClient_MusicSetList(t *testing.T) {
