@@ -9,34 +9,35 @@ import (
 )
 
 const (
-	apiURL string = "https://api.zaycev.net/external"
-	helloURL string = apiURL + "/hello"
-	authURL string = apiURL + "/auth?"
-	topURL string = apiURL + "/top?"
-	artistURL string = apiURL + "/artist/%d?"
-	musicSetListURL string = apiURL + "/musicset/list?"
+	apiURL            string = "https://api.zaycev.net/external"
+	helloURL          string = apiURL + "/hello"
+	authURL           string = apiURL + "/auth?"
+	topURL            string = apiURL + "/top?"
+	artistURL         string = apiURL + "/artist/%d?"
+	musicSetListURL   string = apiURL + "/musicset/list?"
 	musicSetDetileURL string = apiURL + "/musicset/detail?"
-	genreURL string = apiURL + "/genre?"
-	trackURL string = apiURL + "/track/%d?"
-	//feedbackURL string = apiURL + "/feedback?"
-	//bugsURL string = apiURL + "/bugs?"
-	autoCompleteURL string = apiURL + "/autocomplete?"
-	searchURL string = apiURL + "/search?"
-	optionsURL string = apiURL + "/options?"
-	playURL string = apiURL + "/track/%d/play?"
-	downloadURL string = apiURL + "/track/%d/download/?"
+	genreURL          string = apiURL + "/genre?"
+	trackURL          string = apiURL + "/track/%d?"
+	autoCompleteURL   string = apiURL + "/autocomplete?"
+	searchURL         string = apiURL + "/search?"
+	optionsURL        string = apiURL + "/options?"
+	playURL           string = apiURL + "/track/%d/play?"
+	downloadURL       string = apiURL + "/track/%d/download/?"
 )
 
 var (
-	errData = []byte{'{', '}'}
+	ed = []byte{'{', '}'}
 )
 
+// Provides the client and associated elements for interacting with the
+// Zaycev API
 type ZClient struct {
-	client      *http.Client
-	accessToken string
-	staticKey   string
+	client      *http.Client //default http.Client
+	accessToken string       //set if stored before (optional)
+	staticKey   string       //set required
 }
 
+// Generates a new client for the Zaycev API
 func NewZClient(httpClient *http.Client, token, sKey string) *ZClient {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -44,6 +45,7 @@ func NewZClient(httpClient *http.Client, token, sKey string) *ZClient {
 	return &ZClient{client: httpClient, accessToken: token, staticKey: sKey}
 }
 
+// Authorizes against the Zaycev API
 func (zc *ZClient) Auth() {
 	if zc.accessToken != "" {
 		return
@@ -51,7 +53,6 @@ func (zc *ZClient) Auth() {
 	zc.hello()
 }
 
-//https://api.zaycev.net/external/hello
 func (zc *ZClient) hello() {
 	if zc.accessToken != "" {
 		return
@@ -60,16 +61,15 @@ func (zc *ZClient) hello() {
 	var t ZToken
 	data, err := do(zc, helloURL)
 	if err != nil {
-
+		return
 	}
 
 	if err := t.parse(data); err != nil {
-
+		return
 	}
 	zc.auth(t.Token)
 }
 
-//https://api.zaycev.net/external/auth?code=%s&hash=%s
 func (zc *ZClient) auth(token string) {
 
 	var t ZToken
@@ -84,17 +84,17 @@ func (zc *ZClient) auth(token string) {
 	data, err := do(zc, uri)
 
 	if err != nil {
-
+		return
 	}
 
 	if err := t.parse(data); err != nil {
-
+		return
 	}
 
 	zc.accessToken = t.Token
 }
 
-//https://api.zaycev.net/external/search?query=%s&page=%s&type=%s&sort=%s&style=%s&access_token=%s
+//Send Search API request
 func (zc *ZClient) Search(params url.Values) (ZSearch, error) {
 	return search(zc, params)
 }
@@ -348,31 +348,31 @@ func play(zc *ZClient, id int) (ZPlay, error) {
 	return zPlay, nil
 }
 
-//get data
+//Calls an HTTP GET
 func do(zc *ZClient, uri string) ([]byte, error) {
 
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		return errData, err
+		return ed, err
 	}
 
 	res, err := zc.client.Do(req)
 	if err != nil {
-		return errData, err
+		return ed, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return errData, fmt.Errorf("not found")
+		return ed, fmt.Errorf("not found")
 	}
 
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return errData, err
+		return ed, err
 	}
 	se := checkServiceError(bodyBytes)
 	if se != nil {
-		return errData, se
+		return ed, se
 	}
 	return bodyBytes, nil
 }
