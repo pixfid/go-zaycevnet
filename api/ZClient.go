@@ -1,38 +1,53 @@
+/*
+	Copyright (C) 2016  <Semchenko Aleksandr>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package api
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 )
 
 const (
-	apiURL            string = "https://api.zaycev.net/external"
-	helloURL          string = apiURL + "/hello"
-	authURL           string = apiURL + "/auth?"
-	topURL            string = apiURL + "/top?"
-	artistURL         string = apiURL + "/artist/%d?"
-	musicSetListURL   string = apiURL + "/musicset/list?"
+	apiURL string = "https://api.zaycev.net/external"
+	helloURL string = apiURL + "/hello"
+	authURL string = apiURL + "/auth?"
+	topURL string = apiURL + "/top?"
+	artistURL string = apiURL + "/artist/%d?"
+	musicSetListURL string = apiURL + "/musicset/list?"
 	musicSetDetileURL string = apiURL + "/musicset/detail?"
-	genreURL          string = apiURL + "/genre?"
-	trackURL          string = apiURL + "/track/%d?"
-	autoCompleteURL   string = apiURL + "/autocomplete?"
-	searchURL         string = apiURL + "/search?"
-	optionsURL        string = apiURL + "/options?"
-	playURL           string = apiURL + "/track/%d/play?"
-	downloadURL       string = apiURL + "/track/%d/download/?"
-)
-
-var (
-	ed = []byte{'{', '}'}
+	genreURL string = apiURL + "/genre?"
+	trackURL string = apiURL + "/track/%d?"
+	autoCompleteURL string = apiURL + "/autocomplete?"
+	searchURL string = apiURL + "/search?"
+	optionsURL string = apiURL + "/options?"
+	playURL string = apiURL + "/track/%d/play?"
+	downloadURL string = apiURL + "/track/%d/download/?"
 )
 
 // Provides the client and associated elements for interacting with the
 // Zaycev API
 type ZClient struct {
 	client      *http.Client //default http.Client
+	helloToken  string       //set if stored before (optional)
 	accessToken string       //set if stored before (optional)
 	staticKey   string       //set required
 }
@@ -45,343 +60,325 @@ func NewZClient(httpClient *http.Client, token, sKey string) *ZClient {
 	return &ZClient{client: httpClient, accessToken: token, staticKey: sKey}
 }
 
-// Authorizes against the Zaycev API
-func (zc *ZClient) Auth() {
-	if zc.accessToken != "" {
-		return
-	}
-	zc.hello()
+// ClientError is a generic error specific to the `api` package.
+type ClientError struct {
+	msg string
 }
 
-func (zc *ZClient) hello() {
-	if zc.accessToken != "" {
-		return
-	}
+// Error returns a string representation of the error condition.
+func (self ClientError) Error() string {
+	return self.msg
+}
 
-	var t ZToken
-	data, err := do(zc, helloURL)
+// checkStaticKey ensures that the user configured her API key,
+//   or returns an error.
+func (self *ZClient) checkStaticKey() (err error) {
+	if self.staticKey == "" {
+		return ClientError{msg: "Empty Static Key is invalid"}
+	} else {
+		return nil
+	}
+}
+
+// checkHelloToken ensures that the user configured her API key,
+//   or returns an error.
+func (self *ZClient) checkHelloToken() (err error) {
+	if self.helloToken == "" {
+		return ClientError{msg: "Empty Hello Token is invalid"}
+	} else {
+		return nil
+	}
+}
+
+// checkAccessToken ensures that the user configured her API key,
+//   or returns an error.
+func (self *ZClient) checkAccessToken() (err error) {
+	if self.accessToken == "" {
+		return ClientError{msg: "Empty Access Token is invalid"}
+	} else {
+		return nil
+	}
+}
+
+// fetchApiJson makes a request to the API and decodes the response.
+// `actionUrl` is the final path component that specifies the API call
+// `parameters` include the API key
+// `result` is modified as an output parameter. It must be a pointer to a ZC JSON structure.
+func (zc *ZClient) fetchApiJson(actionUrl string, values url.Values, result interface{}) (err error) {
+	var resp *http.Response
+
+	resp, err = zc.makeApiGetRequest(actionUrl, values)
+
 	if err != nil {
-		return
+		return err
+	}
+	defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+
+	if err = dec.Decode(result); err != nil {
+		return err
 	}
 
-	if err := t.parse(data); err != nil {
-		return
-	}
-	zc.auth(t.Token)
+	//TODO checkServiceError(body)
+
+	return err
 }
 
-func (zc *ZClient) auth(token string) {
+// makeApiGetRequest fetches a URL with querystring via HTTP GET and
+//  returns the response if the status code is HTTP 200
+// `parameters` should not include the apikey.
+// The caller must call `resp.Body.Close()`.
+func (zc *ZClient) makeApiGetRequest(fullUrl string, values url.Values) (resp *http.Response, err error) {
 
-	var t ZToken
-	hash := MD5Hash(token + zc.staticKey)
-
-	params := url.Values{}
-	params.Add("code", token)
-	params.Add("hash", hash)
-
-	uri := authURL + params.Encode()
-
-	data, err := do(zc, uri)
+	req, err := http.NewRequest("GET", fullUrl + values.Encode(), nil)
 
 	if err != nil {
-		return
+		return resp, err
 	}
 
-	if err := t.parse(data); err != nil {
-		return
-	}
-
-	zc.accessToken = t.Token
-}
-
-//Send Search API request
-func (zc *ZClient) Search(params url.Values) (ZSearch, error) {
-	return search(zc, params)
-}
-
-func search(zc *ZClient, params url.Values) (ZSearch, error) {
-	var zSearch ZSearch
-	params.Add("access_token", zc.accessToken)
-	uri := searchURL + params.Encode()
-	data, err := do(zc, uri)
+	resp, err = zc.client.Do(req)
 	if err != nil {
-		return ZSearch{}, err
+		return resp, err
 	}
-	if err := zSearch.parse(data); err != nil {
-		return ZSearch{}, err
+
+	if resp.StatusCode != 200 {
+		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
+		resp.Write(os.Stdout)
+		return resp, ClientError{msg: msg}
 	}
-	return zSearch, nil
+
+	return resp, nil
 }
 
-//https://api.zaycev.net/external/autocomplete?access_token=%s&code%s
-func (zc *ZClient) AutoComplete(query string) (ZTerms, error) {
-	return autoComplete(zc, query)
+func (zc *ZClient) Auth() (err error) {
+	if err = zc.checkStaticKey(); err != nil {
+		return err
+	}
+
+	return zc.hello()
 }
 
-func autoComplete(zc *ZClient, query string) (ZTerms, error) {
-	var zTerms ZTerms
+func (zc *ZClient) hello() (err error) {
 
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("query", query)
+	if err = zc.checkStaticKey(); err != nil {
+		return err
+	}
 
-	uri := autoCompleteURL + params.Encode()
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZTerms{}, err
+	t := &ZToken{}
+	if err := zc.fetchApiJson(helloURL, url.Values{}, t); err != nil {
+		return err
 	}
-	if err := zTerms.parse(data); err != nil {
-		return ZTerms{}, err
-	}
-	return zTerms, nil
+
+	zc.helloToken = t.Token
+
+	return zc.auth()
 }
 
-//https://api.zaycev.net/external/top?page=%s&access_token=%s
-func (zc *ZClient) Top(page int) (ZTop, error) {
-	return top(zc, page)
+func (zc *ZClient) auth() (err error) {
+
+	if err = zc.checkHelloToken(); err != nil {
+		return err
+	}
+	r := &ZToken{}
+
+	hash := MD5Hash(zc.helloToken + zc.staticKey)
+
+	values := url.Values{}
+	values.Add("code", zc.helloToken)
+	values.Add("hash", hash)
+
+	if err := zc.fetchApiJson(authURL, values, r); err != nil {
+		return err
+	}
+	zc.accessToken = r.Token
+	return err
 }
 
-func top(zc *ZClient, page int) (ZTop, error) {
-	var zTop ZTop
-	params := url.Values{}
-	params.Add("page", strconv.Itoa(page))
-	params.Add("access_token", zc.accessToken)
+func (zc *ZClient) Search(values url.Values) (r *ZSearch, err error) {
+	r = &ZSearch{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
 
-	uri := topURL + params.Encode()
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZTop{}, err
+	values.Add("access_token", zc.accessToken)
+
+	if err := zc.fetchApiJson(searchURL, values, r); err != nil {
+		return r, err
 	}
-	if err := zTop.parse(data); err != nil {
-		return ZTop{}, err
-	}
-	return zTop, nil
+
+	return r, err
 }
 
-//https://api.zaycev.net/external/musicset/list?page=%s&access_token=%s
-func (zc *ZClient) MusicSetList(page int) (ZMusicSetList, error) {
-	return musicSetList(zc, page)
+func (zc *ZClient) AutoComplete(query string) (r *ZTerms, err error) {
+	r = &ZTerms{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("query", query)
+
+	if err := zc.fetchApiJson(autoCompleteURL, values, r); err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
-func musicSetList(zc *ZClient, page int) (ZMusicSetList, error) {
-	var zMusicSetList ZMusicSetList
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("page", strconv.Itoa(page))
-
-	uri := musicSetListURL + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZMusicSetList{}, err
+func (zc *ZClient) Top(page int) (r *ZTop, err error) {
+	r = &ZTop{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
 	}
-	if err := zMusicSetList.parse(data); err != nil {
-		return ZMusicSetList{}, err
+
+	values := url.Values{}
+	values.Add("page", strconv.Itoa(page))
+	values.Add("access_token", zc.accessToken)
+
+	if err := zc.fetchApiJson(topURL, values, r); err != nil {
+		return r, err
 	}
-	return zMusicSetList, nil
+
+	return r, err
 }
 
-//https://api.zaycev.net/external/musicset/detail?id=%s&access_token=%s
-func (zc *ZClient) MusicSetDetile(id int) (ZMusicSetDetile, error) {
-	return musicSetDetile(zc, id)
+func (zc *ZClient) MusicSetList(page int) (r *ZMusicSetList, err error) {
+	r = &ZMusicSetList{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("page", strconv.Itoa(page))
+
+	if err := zc.fetchApiJson(musicSetListURL, values, r); err != nil {
+		return r, err
+	}
+	return r, err
 }
 
-func musicSetDetile(zc *ZClient, id int) (ZMusicSetDetile, error) {
-	var zMusicSetDetile ZMusicSetDetile
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("id", strconv.Itoa(id))
-
-	uri := musicSetDetileURL + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZMusicSetDetile{}, err
+func (zc *ZClient) MusicSetDetile(id int) (r *ZMusicSetDetile, err error) {
+	r = &ZMusicSetDetile{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
 	}
-	if err := zMusicSetDetile.parse(data); err != nil {
-		return ZMusicSetDetile{}, err
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("id", strconv.Itoa(id))
+
+	if err := zc.fetchApiJson(musicSetDetileURL, values, r); err != nil {
+		return r, err
 	}
-	return zMusicSetDetile, nil
+
+	return r, err
 }
 
-//https://api.zaycev.net/external/genre?genre=%s&page=%s&access_token=%s
-func (zc *ZClient) Genre(genreName string, page int) (ZGenre, error) {
-	return genre(zc, genreName, page)
+func (zc *ZClient) Genre(genreName string, page int) (r *ZGenre, err error) {
+	r = &ZGenre{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("page", strconv.Itoa(page))
+	values.Add("genre", genreName)
+
+	if err := zc.fetchApiJson(genreURL, values, r); err != nil {
+		return r, err
+	}
+
+	return r, err
+
 }
 
-func genre(zc *ZClient, genre string, page int) (ZGenre, error) {
-	var zGenre ZGenre
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("page", strconv.Itoa(page))
-	params.Add("genre", genre)
-
-	uri := genreURL + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZGenre{}, err
+func (zc *ZClient) Artist(id int) (r *ZArtist, err error) {
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
 	}
-	if err := zGenre.parse(data); err != nil {
-		return ZGenre{}, err
+	r = &ZArtist{}
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+
+	url := fmt.Sprintf(artistURL, id)
+
+	if err := zc.fetchApiJson(url, values, r); err != nil {
+		return r, err
 	}
-	return zGenre, nil
+
+	return r, err
 }
 
-//https://api.zaycev.net/external/artist/%d?access_token=%s
-func (zc *ZClient) Artist(id int) (ZArtist, error) {
-	return artist(zc, id)
+func (zc *ZClient) Track(id int) (r *ZTrack, err error) {
+	r = &ZTrack{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+
+	url := fmt.Sprintf(trackURL, id)
+
+	if err := zc.fetchApiJson(url, values, r); err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
-func artist(zc *ZClient, id int) (ZArtist, error) {
-	var zArtist ZArtist
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-
-	u := fmt.Sprintf(artistURL, id)
-
-	uri := u + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZArtist{}, err
+func (zc *ZClient) Options() (r *ZOptions, err error) {
+	r = &ZOptions{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
 	}
-	if err := zArtist.parse(data); err != nil {
-		return ZArtist{}, err
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+
+	if err := zc.fetchApiJson(optionsURL, values, r); err != nil {
+		return r, err
 	}
-	return zArtist, nil
+
+	return r, err
 }
 
-//https://api.zaycev.net/external/track/%d?access_token=%s
-func (zc *ZClient) Track(id int) (ZTrack, error) {
-	return track(zc, id)
+func (zc *ZClient) Download(id int) (r *ZDownload, err error) {
+	r = &ZDownload{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
+	}
+
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("encoded_identifier", "")
+
+	url := fmt.Sprintf(downloadURL, id)
+	if err := zc.fetchApiJson(url, values, r); err != nil {
+		return r, err
+	}
+
+	return r, err
 }
 
-func track(zc *ZClient, id int) (ZTrack, error) {
-	var zTrack ZTrack
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-
-	u := fmt.Sprintf(trackURL, id)
-
-	uri := u + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZTrack{}, err
-	}
-	if err := zTrack.parse(data); err != nil {
-		return ZTrack{}, err
-	}
-	return zTrack, nil
-}
-
-//https://api.zaycev.net/external/options?access_token=%s
-func (zc *ZClient) Options() (ZOptions, error) {
-	return options(zc)
-}
-
-func options(zc *ZClient) (ZOptions, error) {
-	var zOptions ZOptions
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-
-	uri := optionsURL + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZOptions{}, err
-	}
-	if err := zOptions.parse(data); err != nil {
-		return ZOptions{}, err
-	}
-	return zOptions, nil
-}
-
-//https://api.zaycev.net/external/track/%d/download/?access_token=%s&encoded_identifier=%s"
-func (zc *ZClient) Download(id int) (ZDownload, error) {
-	return download(zc, id)
-}
-
-func download(zc *ZClient, id int) (ZDownload, error) {
-	var zDownload ZDownload
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("encoded_identifier", "")
-
-	u := fmt.Sprintf(downloadURL, id)
-
-	uri := u + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZDownload{}, err
-	}
-	if err := zDownload.parse(data); err != nil {
-		return ZDownload{}, err
-	}
-	return zDownload, nil
-}
-
-//https://api.zaycev.net/external/track/%s/play?access_token=%s&encoded_identifier=%s
-func (zc *ZClient) Play(id int) (ZPlay, error) {
-	return play(zc, id)
-}
-
-func play(zc *ZClient, id int) (ZPlay, error) {
-	var zPlay ZPlay
-	params := url.Values{}
-	params.Add("access_token", zc.accessToken)
-	params.Add("encoded_identifier", "")
-
-	u := fmt.Sprintf(playURL, id)
-
-	uri := u + params.Encode()
-
-	data, err := do(zc, uri)
-	if err != nil {
-		return ZPlay{}, err
-	}
-	if err := zPlay.parse(data); err != nil {
-		return ZPlay{}, err
-	}
-	return zPlay, nil
-}
-
-//Calls an HTTP GET
-func do(zc *ZClient, uri string) ([]byte, error) {
-
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return ed, err
+func (zc *ZClient) Play(id int) (r *ZPlay, err error) {
+	r = &ZPlay{}
+	if err = zc.checkAccessToken(); err != nil {
+		return r, err
 	}
 
-	res, err := zc.client.Do(req)
-	if err != nil {
-		return ed, err
-	}
-	defer res.Body.Close()
+	values := url.Values{}
+	values.Add("access_token", zc.accessToken)
+	values.Add("encoded_identifier", "")
 
-	if res.StatusCode != http.StatusOK {
-		return ed, fmt.Errorf("not found")
+	url := fmt.Sprintf(playURL, id)
+	if err := zc.fetchApiJson(url, values, r); err != nil {
+		return r, err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return ed, err
-	}
-	se := checkServiceError(bodyBytes)
-	if se != nil {
-		return ed, se
-	}
-	return bodyBytes, nil
-}
+	return r, err
 
-func checkServiceError(data []byte) error {
-	var zError ZError
-	err := zError.parse(data)
-	if err != nil || zError.Error.Text != "" {
-		return fmt.Errorf("Message %s, code %d", zError.Error.Text, zError.Error.Code)
-	}
-	return nil
 }

@@ -53,4 +53,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
-
+staticKeys.txt
+demo

@@ -1,3 +1,20 @@
+/*
+	Copyright (C) 2016  <Semchenko Aleksandr>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package api
 
 type ZToken struct {
@@ -6,9 +23,9 @@ type ZToken struct {
 
 type ZError struct {
 	Error struct {
-		Code int
-		Text string
-	}
+		      Code int
+		      Text string
+	      }
 }
 
 type ZTop struct {
@@ -37,13 +54,13 @@ type ZTop struct {
 }
 
 type ZSearch struct {
-	Artist struct {
-		About         string `json:"about"`
-		ID            int    `json:"id"`
-		ImageURI      string `json:"imageUri"`
-		Name          string `json:"name"`
-		SmallImageURI string `json:"smallImageUri"`
-	} `json:"artist"`
+	Artist      struct {
+			    About         string `json:"about"`
+			    ID            int    `json:"id"`
+			    ImageURI      string `json:"imageUri"`
+			    Name          string `json:"name"`
+			    SmallImageURI string `json:"smallImageUri"`
+		    } `json:"artist"`
 	Page        int      `json:"page"`
 	PagesCount  int      `json:"pagesCount"`
 	SuggestList []string `json:"suggestList"`
@@ -96,16 +113,16 @@ type ZGenre struct {
 
 type ZArtist struct {
 	Artist struct {
-		About         string `json:"about"`
-		ID            int    `json:"id"`
-		ImageURI      string `json:"imageUri"`
-		Name          string `json:"name"`
-		SmallImageURI string `json:"smallImageUri"`
-	} `json:"artist"`
+		       About         string `json:"about"`
+		       ID            int    `json:"id"`
+		       ImageURI      string `json:"imageUri"`
+		       Name          string `json:"name"`
+		       SmallImageURI string `json:"smallImageUri"`
+	       } `json:"artist"`
 }
 
 type ZMusicSetList struct {
-	List []struct {
+	List           []struct {
 		About          string `json:"about"`
 		CreateDate     int    `json:"createDate"`
 		ID             int    `json:"id"`
@@ -127,18 +144,18 @@ type musicsetTypeID struct {
 
 type ZMusicSetDetile struct {
 	Musicset struct {
-		About          string `json:"about"`
-		CreateDate     int    `json:"createDate"`
-		ID             int    `json:"id"`
-		ImageURL       string `json:"imageUrl"`
-		ImageURLTop917 string `json:"imageUrlTop917"`
-		Name           string `json:"name"`
-		PublishDate    int    `json:"publishDate"`
-		SmallImageURL  string `json:"smallImageUrl"`
-		TracksCount    int    `json:"tracksCount"`
-		URL            string `json:"url"`
-	} `json:"musicset"`
-	Tracks []struct {
+			 About          string `json:"about"`
+			 CreateDate     int    `json:"createDate"`
+			 ID             int    `json:"id"`
+			 ImageURL       string `json:"imageUrl"`
+			 ImageURLTop917 string `json:"imageUrlTop917"`
+			 Name           string `json:"name"`
+			 PublishDate    int    `json:"publishDate"`
+			 SmallImageURL  string `json:"smallImageUrl"`
+			 TracksCount    int    `json:"tracksCount"`
+			 URL            string `json:"url"`
+		 } `json:"musicset"`
+	Tracks   []struct {
 		ArtistID                int     `json:"artistId"`
 		ArtistImageURLSquare100 string  `json:"artistImageUrlSquare100"`
 		ArtistImageURLSquare250 string  `json:"artistImageUrlSquare250"`
@@ -161,29 +178,29 @@ type ZTrack struct {
 	Rating float64 `json:"rating"`
 	RbtURL string  `json:"rbtUrl"`
 	Track  struct {
-		ArtistID                int      `json:"artistId"`
-		ArtistImageURLSquare100 string   `json:"artistImageUrlSquare100"`
-		ArtistImageURLSquare250 string   `json:"artistImageUrlSquare250"`
-		ArtistImageURLTop917    string   `json:"artistImageUrlTop917"`
-		ArtistName              string   `json:"artistName"`
-		Bitrate                 int      `json:"bitrate"`
-		Created                 int      `json:"created"`
-		Duration                int      `json:"duration"`
-		LyricAuthor             []string `json:"lyricAuthor"`
-		Lyrics                  struct {
-			Original []string `json:"original"`
-		} `json:"lyrics"`
-		MusicAuthor     []string `json:"musicAuthor"`
-		Name            string   `json:"name"`
-		RightPossessors []struct {
-			URL        string `json:"url"`
-			Name       string `json:"name"`
-			PictureURL string `json:"pictureUrl"`
-		} `json:"rightPossessors"`
-		Size     float64 `json:"size"`
-		UserID   int     `json:"userId"`
-		UserName string  `json:"userName"`
-	} `json:"track"`
+		       ArtistID                int      `json:"artistId"`
+		       ArtistImageURLSquare100 string   `json:"artistImageUrlSquare100"`
+		       ArtistImageURLSquare250 string   `json:"artistImageUrlSquare250"`
+		       ArtistImageURLTop917    string   `json:"artistImageUrlTop917"`
+		       ArtistName              string   `json:"artistName"`
+		       Bitrate                 int      `json:"bitrate"`
+		       Created                 int      `json:"created"`
+		       Duration                int      `json:"duration"`
+		       LyricAuthor             []string `json:"lyricAuthor"`
+		       Lyrics                  struct {
+						       Original []string `json:"original"`
+					       } `json:"lyrics"`
+		       MusicAuthor             []string `json:"musicAuthor"`
+		       Name                    string   `json:"name"`
+		       RightPossessors         []struct {
+			       URL        string `json:"url"`
+			       Name       string `json:"name"`
+			       PictureURL string `json:"pictureUrl"`
+		       } `json:"rightPossessors"`
+		       Size                    float64 `json:"size"`
+		       UserID                  int     `json:"userId"`
+		       UserName                string  `json:"userName"`
+	       } `json:"track"`
 }
 
 type ZTerms struct {
