@@ -2,6 +2,7 @@
 Golang bindings for the Zaycev.net API
 
 [![Build Status](https://travis-ci.org/pixfid/go-zaycevnet.svg?branch=master)](https://travis-ci.org/pixfid/go-zaycevnet)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pixfid/go-zaycevnet)](https://goreportcard.com/report/github.com/pixfid/go-zaycevnet)
 
 # Install: <br/>
 
