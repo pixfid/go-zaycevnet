@@ -31,7 +31,8 @@ var (
 func TestNewZClient(t *testing.T) {
 	client = NewZClient(nil, "", "kmskoNkYHDnl3ol2")
 	client.Auth()
-	println("Token:", client.accessToken)
+	println("Hello Token:", client.helloToken)
+	println("Access Token:", client.accessToken)
 }
 
 func TestZClient_Top(t *testing.T) {

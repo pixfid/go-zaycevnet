@@ -72,8 +72,8 @@ func (self ClientError) Error() string {
 
 // checkStaticKey ensures that the user configured her API key,
 //   or returns an error.
-func (self *ZClient) checkStaticKey() (err error) {
-	if self.staticKey == "" {
+func (zc *ZClient) checkStaticKey() (err error) {
+	if zc.staticKey == "" {
 		return ClientError{msg: "Empty Static Key is invalid"}
 	} else {
 		return nil
@@ -82,8 +82,8 @@ func (self *ZClient) checkStaticKey() (err error) {
 
 // checkHelloToken ensures that the user configured her API key,
 //   or returns an error.
-func (self *ZClient) checkHelloToken() (err error) {
-	if self.helloToken == "" {
+func (zc *ZClient) checkHelloToken() (err error) {
+	if zc.helloToken == "" {
 		return ClientError{msg: "Empty Hello Token is invalid"}
 	} else {
 		return nil
@@ -92,8 +92,8 @@ func (self *ZClient) checkHelloToken() (err error) {
 
 // checkAccessToken ensures that the user configured her API key,
 //   or returns an error.
-func (self *ZClient) checkAccessToken() (err error) {
-	if self.accessToken == "" {
+func (zc *ZClient) checkAccessToken() (err error) {
+	if zc.accessToken == "" {
 		return ClientError{msg: "Empty Access Token is invalid"}
 	} else {
 		return nil
