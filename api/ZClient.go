@@ -27,20 +27,20 @@ import (
 )
 
 const (
-	apiURL string = "https://api.zaycev.net/external"
-	helloURL string = apiURL + "/hello"
-	authURL string = apiURL + "/auth?"
-	topURL string = apiURL + "/top?"
-	artistURL string = apiURL + "/artist/%d?"
-	musicSetListURL string = apiURL + "/musicset/list?"
+	apiURL            string = "https://api.zaycev.net/external"
+	helloURL          string = apiURL + "/hello"
+	authURL           string = apiURL + "/auth?"
+	topURL            string = apiURL + "/top?"
+	artistURL         string = apiURL + "/artist/%d?"
+	musicSetListURL   string = apiURL + "/musicset/list?"
 	musicSetDetileURL string = apiURL + "/musicset/detail?"
-	genreURL string = apiURL + "/genre?"
-	trackURL string = apiURL + "/track/%d?"
-	autoCompleteURL string = apiURL + "/autocomplete?"
-	searchURL string = apiURL + "/search?"
-	optionsURL string = apiURL + "/options?"
-	playURL string = apiURL + "/track/%d/play?"
-	downloadURL string = apiURL + "/track/%d/download/?"
+	genreURL          string = apiURL + "/genre?"
+	trackURL          string = apiURL + "/track/%d?"
+	autoCompleteURL   string = apiURL + "/autocomplete?"
+	searchURL         string = apiURL + "/search?"
+	optionsURL        string = apiURL + "/options?"
+	playURL           string = apiURL + "/track/%d/play?"
+	downloadURL       string = apiURL + "/track/%d/download/?"
 )
 
 // Provides the client and associated elements for interacting with the
@@ -106,22 +106,16 @@ func (self *ZClient) checkAccessToken() (err error) {
 // `result` is modified as an output parameter. It must be a pointer to a ZC JSON structure.
 func (zc *ZClient) fetchApiJson(actionUrl string, values url.Values, result interface{}) (err error) {
 	var resp *http.Response
-
 	resp, err = zc.makeApiGetRequest(actionUrl, values)
-
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
 	dec := json.NewDecoder(resp.Body)
-
 	if err = dec.Decode(result); err != nil {
 		return err
 	}
-
 	//TODO checkServiceError(body)
-
 	return err
 }
 
@@ -130,24 +124,19 @@ func (zc *ZClient) fetchApiJson(actionUrl string, values url.Values, result inte
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
 func (zc *ZClient) makeApiGetRequest(fullUrl string, values url.Values) (resp *http.Response, err error) {
-
-	req, err := http.NewRequest("GET", fullUrl + values.Encode(), nil)
-
+	req, err := http.NewRequest("GET", fullUrl+values.Encode(), nil)
 	if err != nil {
 		return resp, err
 	}
-
 	resp, err = zc.client.Do(req)
 	if err != nil {
 		return resp, err
 	}
-
 	if resp.StatusCode != 200 {
 		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
 		resp.Write(os.Stdout)
 		return resp, ClientError{msg: msg}
 	}
-
 	return resp, nil
 }
 
@@ -155,23 +144,18 @@ func (zc *ZClient) Auth() (err error) {
 	if err = zc.checkStaticKey(); err != nil {
 		return err
 	}
-
 	return zc.hello()
 }
 
 func (zc *ZClient) hello() (err error) {
-
 	if err = zc.checkStaticKey(); err != nil {
 		return err
 	}
-
 	t := &ZToken{}
 	if err := zc.fetchApiJson(helloURL, url.Values{}, t); err != nil {
 		return err
 	}
-
 	zc.helloToken = t.Token
-
 	return zc.auth()
 }
 
@@ -181,13 +165,10 @@ func (zc *ZClient) auth() (err error) {
 		return err
 	}
 	r := &ZToken{}
-
 	hash := MD5Hash(zc.helloToken + zc.staticKey)
-
 	values := url.Values{}
 	values.Add("code", zc.helloToken)
 	values.Add("hash", hash)
-
 	if err := zc.fetchApiJson(authURL, values, r); err != nil {
 		return err
 	}
@@ -200,13 +181,10 @@ func (zc *ZClient) Search(values url.Values) (r *ZSearch, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values.Add("access_token", zc.accessToken)
-
 	if err := zc.fetchApiJson(searchURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -215,7 +193,6 @@ func (zc *ZClient) AutoComplete(query string) (r *ZTerms, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
 	values.Add("query", query)
@@ -223,7 +200,6 @@ func (zc *ZClient) AutoComplete(query string) (r *ZTerms, err error) {
 	if err := zc.fetchApiJson(autoCompleteURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -232,7 +208,6 @@ func (zc *ZClient) Top(page int) (r *ZTop, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("page", strconv.Itoa(page))
 	values.Add("access_token", zc.accessToken)
@@ -240,7 +215,6 @@ func (zc *ZClient) Top(page int) (r *ZTop, err error) {
 	if err := zc.fetchApiJson(topURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -249,11 +223,9 @@ func (zc *ZClient) MusicSetList(page int) (r *ZMusicSetList, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
 	values.Add("page", strconv.Itoa(page))
-
 	if err := zc.fetchApiJson(musicSetListURL, values, r); err != nil {
 		return r, err
 	}
@@ -268,11 +240,9 @@ func (zc *ZClient) MusicSetDetile(id int) (r *ZMusicSetDetile, err error) {
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
 	values.Add("id", strconv.Itoa(id))
-
 	if err := zc.fetchApiJson(musicSetDetileURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -285,11 +255,9 @@ func (zc *ZClient) Genre(genreName string, page int) (r *ZGenre, err error) {
 	values.Add("access_token", zc.accessToken)
 	values.Add("page", strconv.Itoa(page))
 	values.Add("genre", genreName)
-
 	if err := zc.fetchApiJson(genreURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 
 }
@@ -299,16 +267,12 @@ func (zc *ZClient) Artist(id int) (r *ZArtist, err error) {
 		return r, err
 	}
 	r = &ZArtist{}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
-
 	url := fmt.Sprintf(artistURL, id)
-
 	if err := zc.fetchApiJson(url, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -317,16 +281,12 @@ func (zc *ZClient) Track(id int) (r *ZTrack, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
-
 	url := fmt.Sprintf(trackURL, id)
-
 	if err := zc.fetchApiJson(url, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -335,14 +295,11 @@ func (zc *ZClient) Options() (r *ZOptions, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
-
 	if err := zc.fetchApiJson(optionsURL, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -351,16 +308,13 @@ func (zc *ZClient) Download(id int) (r *ZDownload, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
 	values.Add("encoded_identifier", "")
-
 	url := fmt.Sprintf(downloadURL, id)
 	if err := zc.fetchApiJson(url, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
 }
 
@@ -369,16 +323,12 @@ func (zc *ZClient) Play(id int) (r *ZPlay, err error) {
 	if err = zc.checkAccessToken(); err != nil {
 		return r, err
 	}
-
 	values := url.Values{}
 	values.Add("access_token", zc.accessToken)
 	values.Add("encoded_identifier", "")
-
 	url := fmt.Sprintf(playURL, id)
 	if err := zc.fetchApiJson(url, values, r); err != nil {
 		return r, err
 	}
-
 	return r, err
-
 }
