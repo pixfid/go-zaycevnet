@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	client := api.NewZClient(nil, "", "kmskoNkYHDnl3ol2") //60kQwLlpV3jv //d7DVaaELv
+	client := api.NewZClient(nil, "", "static_key")
 	client.Auth()
 	params := url.Values{}
 	params.Add("query", "ZZ TOP")
