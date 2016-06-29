@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	client := api.NewZClient(nil, "", "kmskoNkYHDnl3ol2") //60kQwLlpV3jv //d7DVaaELv
+	client := api.NewZClient(nil, "", "static_key")
 	if err := client.Auth(); err != nil {
 		return
 	}
